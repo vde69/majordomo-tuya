@@ -1964,6 +1964,16 @@ class tuya extends module
                }
             }
          }  
+
+         $fields = SQLSelect("SHOW FIELDS FROM 'tuircommand';");
+         $fields = array_column($fields, 'Field');
+         if (in_array('VALUE', $fields)) {
+            SQLExec("ALTER TABLE tudevices DROP COLUMN VALUE;");
+         }   
+         if (in_array('UPDATED', $fields)) {
+            SQLExec("ALTER TABLE tudevices DROP COLUMN UPDATED;");
+         }   
+
       }
       parent::install();
       
@@ -1984,6 +1994,7 @@ class tuya extends module
    {
       SQLExec('DROP TABLE IF EXISTS tudevices');
       SQLExec('DROP TABLE IF EXISTS tucommands');
+      SQLExec('DROP TABLE IF EXISTS tucommands_tec');
       SQLExec('DROP TABLE IF EXISTS turange');
       SQLExec('DROP TABLE IF EXISTS tuircommand');
 
@@ -2028,7 +2039,6 @@ class tuya extends module
  
  tucommands: ID int(10) unsigned NOT NULL auto_increment
  tucommands: TITLE varchar(100) NOT NULL DEFAULT ''
- tucommands: VALUE varchar(255) NOT NULL DEFAULT ''
  tucommands: ALIAS varchar(255) NOT NULL DEFAULT ''
  tucommands: SDEVICE_TYPE varchar(255) NOT NULL DEFAULT ''
  tucommands: DEVICE_ID int(10) NOT NULL DEFAULT '0'
@@ -2047,7 +2057,10 @@ class tuya extends module
  tucommands: COLOR_CONVERT boolean DEFAULT 0
  tucommands: REPLACE_LIST varchar(255) DEFAULT ''
  tucommands: COLOR_V2 boolean DEFAULT 0
- tucommands: UPDATED datetime
+ 
+ tucommands_tec: COMMANDS_ID int(10) UNSIGNED NOT NULL
+ tucommands_tec: VALUE varchar(255) NOT NULL DEFAULT ''
+ tucommands_tec: UPDATED datetime
 
  turange: ID int(10) unsigned NOT NULL auto_increment
  turange: COMMAND_ID int(10) unsigned NOT NULL 
