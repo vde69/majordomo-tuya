@@ -449,15 +449,14 @@ class tuya extends module
             array_push($devices, $result['gwId']);
             
             if ($result['version'] == '3.3') {
-               $version = false;
+               $version = 0;
             } else {
-               $version = true;
+               $version = 1;
             }   
             $rec = SQLSelectOne("SELECT * FROM tudevices WHERE DEV_ID='" . $result['gwId'] . "'"); 
             if (IsSet($rec['ID']) and ($rec['DEV_IP'] != $result['ip'] or $rec['VER_3_1'] != $version )) {
                $rec['DEV_IP'] = $result['ip'];
                $rec['VER_3_1'] = $version;
-               SQLPrepareData('tudevices',$rec);
                SQLUpdate('tudevices', $rec);
              }
             echo '<td><b>'.$rec['TITLE'].'</b></td>'; 
@@ -476,15 +475,14 @@ class tuya extends module
                array_push($devices, $result['gwId']);
                
                if ($result['version'] == '3.3') {
-                  $version = false;
+                  $version = 0;
                } else {
-                  $version = true;
+                  $version = 1;
                }   
                $rec = SQLSelectOne("SELECT * FROM tudevices WHERE DEV_ID='" . $result['gwId'] . "'"); 
                if (IsSet($rec['ID']) and ($rec['DEV_IP'] != $result['ip'] or $rec['VER_3_1'] != $version )) {
                   $rec['DEV_IP'] = $result['ip'];
                   $rec['VER_3_1'] = $version;
-                  SQLPrepareData('tudevices',$rec);
                   SQLUpdate('tudevices', $rec);
                 }
                echo '<td><b>'.$rec['TITLE'].'</b></td>'; 
@@ -528,7 +526,6 @@ class tuya extends module
                if ($rec) {
                   if ($rec['TITLE'] != $scene['name']) {
                      $rec['TITLE'] = $scene['name'];
-                     SQLPrepareData('tudevices',$rec);
                      SQLUpdate('tudevices', $rec);
                   }   
                } else {
@@ -536,7 +533,6 @@ class tuya extends module
                   $rec['DEV_ID'] = $scene['id'];
                   $rec['TITLE'] = $scene['name'];
                   $rec['TYPE'] = 'scene';
-                  SQLPrepareData('tudevices',$rec);
                   SQLInsert('tudevices', $rec);
                }
             }   
@@ -889,7 +885,6 @@ class tuya extends module
          $rec['VER_3_1'] = 0;   
          $rec['IR_FLAG'] = 0;
 
-         SQLPrepareData('tudevices',$rec);
          $rec['ID']=SQLInsert('tudevices',$rec);
       }
 
@@ -1172,7 +1167,6 @@ class tuya extends module
                $rec['STATUS'] = 0;
                $rec['CONTROL'] = 0;      
 
-               SQLPrepareData('tudevices',$rec);
                $rec['ID']=SQLInsert('tudevices',$rec);
             } else {
                if (is_null($rec['MAC'])) $rec['MAC'] =''; 
@@ -1188,7 +1182,6 @@ class tuya extends module
                  $rec['MAC'] = $device['mac'];
                  $rec['IR_FLAG'] = $ir_flag;
                  
-                 SQLPrepareData('tudevices',$rec);
                  $rec['ID']=SQLUpdate('tudevices',$rec);
                }
 
@@ -1284,7 +1277,6 @@ class tuya extends module
                $rec['CONTROL'] = 0;
                $rec['UUID'] = $device['uuid'];             
 
-               SQLPrepareData('tudevices',$rec);
                $rec['ID'] = SQLInsert('tudevices', $rec);
             } else {
 
@@ -1304,7 +1296,6 @@ class tuya extends module
                  $rec['IR_FLAG'] = $ir_flag;
                  $rec['UUID'] = $device['uuid'];  
                  
-                 SQLPrepareData('tudevices',$rec);
                  $rec['ID'] = SQLUpdate('tudevices',$rec);
                }
             }
@@ -1339,13 +1330,12 @@ class tuya extends module
 
 					  $cmd_rec['VALUE_MAX'] = $sc[$device['productId']][$key]['max'];
 					  $cmd_rec['VALUE_SCALE'] = $sc[$device['productId']][$key]['scale'];
+                 if ($cmd_rec['VALUE_SCALE'] == '') $cmd_rec['VALUE_SCALE']=0;
 					  $cmd_rec['DIVIDEDBY2'] = 0;
 					  $cmd_rec['DIVIDEDBY10'] = 0;
 					  $cmd_rec['DIVIDEDBY100'] = 0;
 
 					  $cmd_rec['DEVICE_ID'] = $rec['ID'];
-
-                 SQLPrepareData('tucommands',$cmd_rec);
 					  $cmd_rec['ID'] = SQLInsert('tucommands', $cmd_rec);
 					} else {
 					  $cmd_rec['VALUE_MIN'] = $sc[$device['productId']][$key]['min'];
@@ -1356,9 +1346,9 @@ class tuya extends module
                  if ($cmd_rec['DIVIDEDBY2'] == 0) {
 					   $cmd_rec['VALUE_SCALE'] = $sc[$device['productId']][$key]['scale'];
                  } 
+                 if ($cmd_rec['VALUE_SCALE'] == '') $cmd_rec['VALUE_SCALE']=0;
 					  $cmd_rec['VALUE_TYPE'] = $sc[$device['productId']][$key]['type'];
 
-                 SQLPrepareData('tucommands',$cmd_rec);
 					  $cmd_rec['ID'] = SQLUpdate('tucommands', $cmd_rec);
 					}
                
@@ -1371,7 +1361,6 @@ class tuya extends module
                         $rng_rec['RANGE_VALUE']=$range_key;
                         $rng_rec['RANGE_DESCRIPTION']=$range_value;
                
-                        SQLPrepareData('turange',$rng_rec);
                         $rng_rec['ID'] = SQLInsert('turange', $rng_rec);
                      }
                   }
@@ -1737,7 +1726,7 @@ class tuya extends module
    
 
    function processCommand($device_id, $command, $value, $params = 0, $checkOld = true) {
-		
+
       $cmd_rec = SQLSelectOne("SELECT * FROM tucommands WHERE DEVICE_ID=".(int)$device_id." AND TITLE LIKE '".DBSafe($command)."'");
          
       if (!$cmd_rec['ID']) {
@@ -1777,8 +1766,7 @@ class tuya extends module
                } 
              }
 
-             SQLPrepareData('tucommands',$cmd_rec);
-             $cmd_rec['ID'] = SQLInsert('tucommands', $cmd_rec);
+        $cmd_rec['ID'] = SQLInsert('tucommands', $cmd_rec);
       }
       
       if  ($cmd_rec['VALUE_SCALE']==NULL || $cmd_rec['VALUE_SCALE']==0) {    
@@ -1793,16 +1781,37 @@ class tuya extends module
          $value = $this->Tuya_to_RGB($value);
       }        
       
-  
-      $old_value = $cmd_rec['VALUE'];
+      if (gettype($value) == 'string' and strlen($value) > 255) {
+         $value = substr($value, 0, 255);
+      }
 
-      $cmd_rec['VALUE'] = $value;
-      $cmd_rec['UPDATED'] = date('Y-m-d H:i:s');
-      SQLPrepareData('tucommands',$cmd_rec);
-      SQLUpdate('tucommands', $cmd_rec);
-      if (is_null($old_value)) $old_value='';
       if (is_null($value)) $value='';
-      
+
+      $old_rec = SQLSelectOne('SELECT * FROM tuvalues WHERE ID='.$cmd_rec['ID'].';');
+      //$old_value = $cmd_rec['VALUE'];
+      if ($old_rec) {
+         $old_value = $old_rec['VALUE'];
+         if (is_null($old_value)) $old_value='';
+
+         $old_rec['VALUE'] = $value;
+         $old_rec['UPDATED'] = date('Y-m-d H:i:s');         
+
+         SQLUpdate('tuvalues', $old_rec);
+         
+      } else {
+         $old_rec = array();
+         $old_rec['ID'] = $cmd_rec['ID'];
+         $old_rec['VALUE'] = $value;
+         $old_rec['UPDATED'] = date('Y-m-d H:i:s');   
+         
+         SQLInsert('tuvalues', $old_rec);         
+      }   
+
+
+      //$cmd_rec['VALUE'] = $value;
+      //$cmd_rec['UPDATED'] = date('Y-m-d H:i:s');
+      //SQLUpdate('tucommands', $cmd_rec);
+
       if ($checkOld and $old_value == $value) return;
          
       if ($command=='state' or $command=='switch_1' or $command=='power' or $command=='Power' or $command=='switch_on') processSubscriptions('TUSTATUS', array('FIELD' => 'STATE','VALUE' => $value,'ID' =>$device_id));
@@ -1924,8 +1933,8 @@ class tuya extends module
       }
      }
      $rec=SQLSelectOne("select * from tucommands where ID=".$properties[0]['ID']);
+     $rec = SQLSelectOne("SELECT * FROM tuvalues WHERE ID=".$rec['ID'].';');
      $rec['value']=$value;
-     SQLPrepareData('tucommands',$rec);
      SQLUpdate('tucommands',$rec);
     
     }
@@ -1952,6 +1961,12 @@ class tuya extends module
          }   
          
       } 
+
+      $rec = SQLSelectOne("SHOW TABLES LIKE 'tuvalues';");
+      if (!$rec) {
+         $sql = "CREATE TABLE tuvalues (ID INT, VALUE VARCHAR(255), UPDATED datetime, INDEX USING HASH (ID)) ENGINE = MEMORY;";
+         SQLExec($sql);
+      }
       
       $rec = SQLSelectOne("SHOW TABLES LIKE 'tuircommand';" );
       if ($rec) {
@@ -1964,16 +1979,6 @@ class tuya extends module
                }
             }
          }  
-
-         $fields = SQLSelect("SHOW FIELDS FROM 'tuircommand';");
-         $fields = array_column($fields, 'Field');
-         if (in_array('VALUE', $fields)) {
-            SQLExec("ALTER TABLE tudevices DROP COLUMN VALUE;");
-         }   
-         if (in_array('UPDATED', $fields)) {
-            SQLExec("ALTER TABLE tudevices DROP COLUMN UPDATED;");
-         }   
-
       }
       parent::install();
       
@@ -1994,7 +1999,6 @@ class tuya extends module
    {
       SQLExec('DROP TABLE IF EXISTS tudevices');
       SQLExec('DROP TABLE IF EXISTS tucommands');
-      SQLExec('DROP TABLE IF EXISTS tucommands_tec');
       SQLExec('DROP TABLE IF EXISTS turange');
       SQLExec('DROP TABLE IF EXISTS tuircommand');
 
@@ -2034,11 +2038,12 @@ class tuya extends module
  tudevices: IR_FLAG boolean NOT NULL DEFAULT 0
  tudevices: CONTROL int(10) unsigned NOT NULL DEFAULT 0
  tudevices: STATUS int(10) unsigned NOT NULL DEFAULT 0
- tudevices: UUID varchar(20) NOT NULL DEFAULT ''
+ tudevices: UUID varchar(30) NOT NULL DEFAULT ''
  
  
  tucommands: ID int(10) unsigned NOT NULL auto_increment
  tucommands: TITLE varchar(100) NOT NULL DEFAULT ''
+ tucommands: VALUE varchar(255) NOT NULL DEFAULT ''
  tucommands: ALIAS varchar(255) NOT NULL DEFAULT ''
  tucommands: SDEVICE_TYPE varchar(255) NOT NULL DEFAULT ''
  tucommands: DEVICE_ID int(10) NOT NULL DEFAULT '0'
@@ -2057,10 +2062,8 @@ class tuya extends module
  tucommands: COLOR_CONVERT boolean DEFAULT 0
  tucommands: REPLACE_LIST varchar(255) DEFAULT ''
  tucommands: COLOR_V2 boolean DEFAULT 0
- 
- tucommands_tec: COMMANDS_ID int(10) UNSIGNED NOT NULL
- tucommands_tec: VALUE varchar(255) NOT NULL DEFAULT ''
- tucommands_tec: UPDATED datetime
+ tucommands: UPDATED datetime
+
 
  turange: ID int(10) unsigned NOT NULL auto_increment
  turange: COMMAND_ID int(10) unsigned NOT NULL 
@@ -2082,28 +2085,9 @@ EOD;
    }
 // --------------------------------------------------------------------
 }
-
-/** 
- * SQLPrepareData
- *
- * use before calling the procedure SQLInsert or SQLUpdate
- *
- */
-function SQLPrepareData($table, &$data)  {
-   if ( $table == 'tudevices' ) { 
-      foreach ($data as $key => &$value) {
-         if ( strtoupper($key) == 'IR_FLAG' && $value != true ) { $value = 0; }
-         if ( strtoupper($key) == 'SEND12' && $value != true ) { $value = 0; }
-         if ( strtoupper($key) == 'VER_3_1' && $value != true ) { $value = 0; }
-         if ( strtoupper($key) == 'ONLY_LOCAL' && $value != true ) { $value = 0; }
-         if ( strtoupper($key) == 'REMOTE_CONTROL' && $value != true ) { $value = 0; }
-         if ( strtoupper($key) == 'BUSY' && $value != true ) { $value = 0; }
-      }   
-   }
-}
-
 /*
 *
 * 
 *
 */
+
